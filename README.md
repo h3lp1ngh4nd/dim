@@ -23,7 +23,7 @@ optional arguments:
   --network {mainnet,testnet,custom}
                         use 'mainnet' or 'testnet'
   --address ADDRESS     specify delegate address
-  --share SHARE         specify voter's share
+  --share SHARE         specify voter's share %
   --start START         specify start date (yyyy/mm/dd)
   --end END             specify end date (yyyy/mm/dd)
 ```  

@@ -55,7 +55,7 @@ def setup_network():
 
 	else:
 		node = network_lookup[args.network][random.randint(0, len(network_lookup[args.network]) - 1)]
-
+		network = args.network
 	print("Using service node: %s" % node)
 	node_status = get_json(node + "/network/status", True)
 	return node, network

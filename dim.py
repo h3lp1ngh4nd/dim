@@ -176,7 +176,7 @@ print ('''
   ___    ___   __  __ 
  |   \  |_ _| |  \/  |
  | |) |  | |  | |\/| |
- |___/  |___| |_|  |_|  v1.1.0
+ |___/  |___| |_|  |_|  v1.3.0
   ''')        
 print ("Delegate Income Monitor")
 print ("Originally created by Lemii")

@@ -13,7 +13,7 @@ DIM accepts multiple (optional) arguments. Examples are:
 
 `dim.exe --network testnet --address lsknp3rrhgbgev5kxxmvja8ct35yahhduwdosaj9w`
 
-`dim.exe --network mainnet --address lskq3mtp4vkzc32nqbod9nfyzhbwwzfnswasrtor6 --start 2021/09/01 --end 2021/09/10`
+`dim.exe --network mainnet --address lskq3mtp4vkzc32nqbod9nfyzhbwwzfnswasrtor6 --share 60 --start 2021/09/01 --end 2021/09/10`
 
 For a complete list, please see:
 ``` .\dim.exe -h

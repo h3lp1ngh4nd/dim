@@ -2,6 +2,8 @@
 A tool to collect data from all blocks forged by a delegate in a certain time period in BTC/USD/EUR at the time of forging. 
 Useful for tax purposes, for example.
 
+The script is now utilizing Python3 and is fully updated for Liskv3, including some minor improvements.
+
 ## Usage
 DIM can be run "as-is" in interactive mode, or with optional arguments.
 

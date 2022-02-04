@@ -1,9 +1,6 @@
-# Delegate Incoming Monitor (DIM)
-A tool to collect data from all blocks forged by a delegate in a certain time period, including the value per block in BTC/USD/EUR at the time of forging. Useful for tax purposes, for example.
-
-A little demonstration video can be found [here](https://www.youtube.com/watch?v=mW54ZHsf-SU).
-
-If you like this software, please consider a donation =] `6725360537423611335L`
+# Delegate Incoming Monitor (DIM) - fixed for Liskv3
+A tool to collect data from all blocks forged by a delegate in a certain time period in BTC/USD/EUR at the time of forging. 
+Useful for tax purposes, for example.
 
 ## Usage
 DIM can be run "as-is" in interactive mode, or with optional arguments.
@@ -14,9 +11,9 @@ Open `dim.exe` and follow the instructions.
 #### Arguments
 DIM accepts multiple (optional) arguments. Examples are:
 
-`dim.exe --network testnet --address 7134531444980378449L`
+`dim.exe --network testnet --address lsknp3rrhgbgev5kxxmvja8ct35yahhduwdosaj9w`
 
-`dim.exe --network mainnet --address 13943256167405531820L --start 2018/09/01 --end 2018/09/10`
+`dim.exe --network mainnet --address lskq3mtp4vkzc32nqbod9nfyzhbwwzfnswasrtor6 --start 2021/09/01 --end 2021/09/10`
 
 For a complete list, please see:
 ``` .\dim.exe -h
@@ -26,8 +23,11 @@ optional arguments:
   --network {mainnet,testnet,custom}
                         use 'mainnet' or 'testnet'
   --address ADDRESS     specify delegate address
+  --share SHARE         specify voter's share
   --start START         specify start date (yyyy/mm/dd)
   --end END             specify end date (yyyy/mm/dd)
 ```  
 #### Running the Python script
-You can run the original Python script if that's preferred. The only non-standard library used is `requests`, found in the `requirements.txt` file. All of the above instructions still apply to using this method.
+You can run the original Python script if that's preferred. 
+The only non-standard library used is `requests`, found in the `requirements.txt` file. 
+All of the above instructions still apply to using this method.

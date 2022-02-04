@@ -55,7 +55,8 @@ def setup_network():
 
 	else:
 		node = network_lookup[args.network][random.randint(0, len(network_lookup[args.network]) - 1)]
-
+		network = args.network
+		
 	print("Using service node: %s" % node)
 	node_status = get_json(node + "/network/status", True)
 	return node, network
@@ -176,7 +177,7 @@ print ('''
   ___    ___   __  __ 
  |   \  |_ _| |  \/  |
  | |) |  | |  | |\/| |
- |___/  |___| |_|  |_|  v1.1.0
+ |___/  |___| |_|  |_|  v1.3.1
   ''')        
 print ("Delegate Income Monitor")
 print ("Originally created by Lemii")
@@ -208,7 +209,7 @@ def main():
 		while True:
 			answer = input("> ")
 			if re.match(r'\d{4}/\d{2}/\d{2}', answer) != None:
-                                # Add a check to deny dates before genesis block of Liskv3
+				# Add a check to deny dates before genesis block of Liskv3
 				date_to_epoch = int(datetime.datetime.strptime(answer,"%Y/%m/%d").timestamp())
 				if date_to_epoch >= v3_genesis_epoch:   
 					start = answer

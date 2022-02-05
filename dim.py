@@ -1,6 +1,6 @@
 import json
 import argparse
-import requests
+import requests # Could be replaced with standard lib 'urllib', however 'requests' is far more convenient
 import datetime
 import csv
 import time
@@ -8,12 +8,12 @@ import re
 import sys
 import random
 
-
 # Fixes/Updates by HelpingHand:
 # -converted code to be fully compatible with Python3
 # -API endpoints and json requests reworked to work with Liskv3
 # -numerous code changes in order to accomodate for Liskv3
 # -added feature to calculate actual delegate earnings (deduct voter share %)
+# -request limiting option
 
 # TODO:
 # SHEER OVERKILL - Add a value calculation method to calculate actual token value at the time of forging (per block) and add this as an option
@@ -32,11 +32,10 @@ def setup_network():
 	network_lookup = {	
 	"mainnet": [
 			"https://service.lisk.com",
-			"https://mainnet-service.lisktools.eu",
+                        "https://mainnet-service.lisktools.eu"
 				],
 	"testnet": [
-			"https://testnet-service.lisk.com",
-			"https://testnet-service.lisktools.eu",
+			"https://testnet-service.lisk.com"
 				],
 	"custom": [
 			"http://127.0.0.1:7000"
@@ -58,8 +57,25 @@ def setup_network():
 		network = args.network
 		
 	print("Using service node: %s" % node)
+
+
+	while True:
+		print("\nDo you want to enable API request limiting (slower hence safer)? (Y/N)")
+		answer = input("> ")
+	
+		if answer == "Yes" or answer == "Y":
+			req_limit = True
+			break
+		elif answer == "No" or answer == "N":
+			req_limit = False
+			print("\nWARNING: Service Node API requests at full speed.")
+			break
+		else:
+			print("Incorrect input, try again.")
+			
+	
 	node_status = get_json(node + "/network/status", True)
-	return node, network
+	return node, network, req_limit
 
 
 def setup_delegate():
@@ -82,7 +98,10 @@ def setup_delegate():
 		delegate = get_json(node + "/api/v2/accounts?username=%s" % username)
 		publickey = delegate['data'][0]['summary']['publicKey']
 	except:
-		sys.exit("Delegate not found.")
+		sys.exit("Delegate not found. Exiting...")
+
+	if share > 100 or share < 0:
+		sys.exit("Voter's share cannot be bigger than 100% or smaller than 0%. Exiting...")
 
 	address = delegate['data'][0]['summary']['address']
 	delegate_name = username
@@ -145,31 +164,36 @@ def seek_block(date, mode, iterations_total):
 	offset = 0
 	mult = 1
 	timestamp_input = int(create_timestamp(date))# - LISK_EPOCH - no longer needed for timestamp calculations
-	
-	for i in range(iterations_total):
-		json_data = get_json(node + "/api/v2/blocks?limit=1&offset=%s&generatorPublicKey=%s" % (offset, publickey))
-		page_timestamp = json_data['data'][0]['timestamp']
-		timestamp_diff = page_timestamp - timestamp_input
+	try:
+		for i in range(iterations_total):
+			json_data = get_json(node + "/api/v2/blocks?limit=1&offset=%s&generatorPublicKey=%s" % (offset, publickey))
+			page_timestamp = json_data['data'][0]['timestamp']
+			timestamp_diff = page_timestamp - timestamp_input
+			
+			if mode == "start" and timestamp_diff < 0:
+				break
+			if mode == "end" and timestamp_diff < 0:
+				offset -= 100
+				break		
+
+
+			if timestamp_diff > 200000:
+				mult = int(timestamp_diff / 200000)
+			else:
+				mult = 1	
+			print ("Diff %s, %s = %s" % (timestamp_input, page_timestamp, timestamp_diff))
+			print ("Pages jumped: %s" % mult)
+
+			offset += int(100*mult)
+			iterations += int(1*mult)
+
+			if req_limit == True:
+				# Prevent server ban by limiting API request rate
+				time.sleep(0.02)
 		
-		if mode == "start" and timestamp_diff < 0:
-			break
-		if mode == "end" and timestamp_diff < 0:
-			offset -= 100
-			break		
-
-
-		if timestamp_diff > 200000:
-			mult = int(timestamp_diff / 200000)
-		else:
-			mult = 1	
-		print ("Diff %s, %s = %s" % (timestamp_input, page_timestamp, timestamp_diff))
-		print ("Pages jumped: %s" % mult)
-
-		offset += int((100*mult))
-		iterations += int((1*mult))
-		# Prevent server ban by limiting API request rate
-		time.sleep(0.02)
-
+	except KeyError:
+		sys.exit("ERROR: No forged blocks found, indicating that your delegate was not forging at the given (starting) date.\nExiting...")
+		
 	return iterations, offset
 
 
@@ -177,7 +201,7 @@ print ('''
   ___    ___   __  __ 
  |   \  |_ _| |  \/  |
  | |) |  | |  | |\/| |
- |___/  |___| |_|  |_|  v1.3.1
+ |___/  |___| |_|  |_|  v1.3.2
   ''')        
 print ("Delegate Income Monitor")
 print ("Originally created by Lemii")
@@ -186,13 +210,13 @@ print ("____________________________________\n")
 
 
 # Setup stuff
-node, network = setup_network()
+node, network, req_limit = setup_network()
 address, publickey, delegate_name, share = setup_delegate()
 filename = setup_filename(delegate_name)
 v3_genesis_epoch = 1629547210 #Saturday, August 21, 2021 2:00:10 PM CET - Block 16270293
 
 def main():
-
+	
 	forging_stats = get_json(node + "/api/v2/accounts?address=%s" % address)
 	iterations_total = int(forging_stats['data'][0]['dpos']['delegate']['producedBlocks'] / 100) + 1
 	blockstats =[]
@@ -203,10 +227,11 @@ def main():
 	# Interactive wizard for start date
 	if args.start is None:
 
-		print ("(OPTIONAL) Enter start date (yyyy/mm/dd):\n")
-		print ("Warning: If left empty, DIM will process *all* blocks ever")
-		print ("forged by the delegate. This can take a very long time.\n")
 		while True:
+			print ("(OPTIONAL) Enter start date (yyyy/mm/dd):\n")
+			print ("Warning: If left empty, DIM will process *all* blocks ever")
+			print ("forged by the delegate, which could take a while.\n")
+			
 			answer = input("> ")
 			if re.match(r'\d{4}/\d{2}/\d{2}', answer) != None:
 				# Add a check to deny dates before genesis block of Liskv3
@@ -215,10 +240,12 @@ def main():
 					start = answer
 					break
 				else:
-					print("ERROR: You have chosen a date before the creation of the Liskv3 Genesis Block silly. Try again!\n\n(OPTIONAL) Enter start date (yyyy/mm/dd):")
+					print("ERROR: You have chosen a date before the creation of the Liskv3 Genesis Block silly. Try again!\n")
 			elif answer == "":
 				start = None
 				break
+			else:
+				print("ERROR: Wrong date format, try again.\n")
 	else:
 		start = args.start
 
@@ -297,14 +324,17 @@ def main():
 			
 			if ignore != 1: 
 				blockstats.append([date_time, float(entry['totalForged']) / 100000000, lsk_btc_value, lsk_usd_value, lsk_eur_value, entry['id']])
-				message_string = "Retrieving data from block #%s, ID: %s" % (block_number, entry['id'])
+				#message_string = "Retrieving data from block #%s, ID: %s" % (block_number, entry['id'])
+				message_string = "Retrieving data from block #%s" % (block_number)
 			else:
 				message_string = "Skipping block #%s, ID: %s" % (block_number, entry['id'])
 
-			#sys.stdout.write('{0}\r'.format(message_string)) # If you like clutter, uncomment
+			sys.stdout.write('{0}\r'.format(message_string)) #uncluttered
 			block_number += 1
-			# Prevent server ban by limiting API request rate
-			time.sleep(0.05)
+
+			if req_limit == True:
+				# Prevent server ban by limiting API request rate
+				time.sleep(0.02)
 
 		offset += 100
 
